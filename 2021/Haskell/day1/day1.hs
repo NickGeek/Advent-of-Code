@@ -6,7 +6,7 @@ main :: IO ()
 main = do
     raw <- readFile "input.txt"
     let parsed = parseFile raw
-    putStrLn $ show (incrCount $ parsed)
+    putStrLn $ show (part1 $ parsed)
     putStrLn $ show (part2 $ parsed)
 
 part1 = incrCount
