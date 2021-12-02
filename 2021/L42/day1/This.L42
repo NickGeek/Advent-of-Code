@@ -7,10 +7,10 @@ Nums = Collection.linkedList(Num)
 LineComp = Data:{
   S that
   I cur
-  @Public read Nums res
+  @Public Nums res
   class method This (S that) = This(that, cur=0I, res=Nums.Empty())
   
-  method Nums () = (
+  @Cache.Eager method Nums () = (
     eol = \that.indexOf(S.nl())
     line = \that.subString(this.cur(), to=eol)
     parsed = Num(string=line)
