@@ -1,0 +1,29 @@
+reuse [L42.is/AdamsTowel]
+
+Fs = Load:{reuse[L42.is/FileSystem]}
+
+Nums = Collection.linkedList(Num)
+
+LineComp = Data:{
+  S that
+  I cur
+  @Public read Nums res
+  class method This (S that) = This(that, cur=0I, res=Nums.Empty())
+  
+  method Nums () = (
+    eol = \that.indexOf(S.nl())
+    line = \that.subString(this.cur(), to=eol)
+    parsed = Num(string=line)
+    
+    Nums n = \res.push(parsed)
+    next = This(\that, cur=eol, res=\res.push(parsed))
+    next.res()
+  )
+}
+
+Main=(
+  input = Fs.Real.#$of().read(\"input.txt")
+  for num in LineComp(input)() (
+    Debug(num)
+  )
+)
