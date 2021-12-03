@@ -42,9 +42,6 @@ procCO2 acc idx =
     in
     procCO2 remaining (idx + 1)
 
-proccess (-1) mapping row = True
-proccess idx mappings row = (row!!idx == mappings!!idx) && proccess (idx - 1) mappings row
-
 parseFile' acc (-1) dat = reverse acc
 parseFile' acc idx dat = parseFile' (acc ++ [collectNth [] idx dat]) (idx - 1) dat
 
