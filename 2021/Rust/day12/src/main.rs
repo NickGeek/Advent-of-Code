@@ -34,17 +34,8 @@ fn main() {
         let n1 = Cave::from(n1);
         let n2 = Cave::from(n2);
 
-        if let Some(l) = adj_list.get_mut(&n1) {
-            l.push(n2.clone());
-        } else {
-            adj_list.insert(n1.clone(), vec![n2.clone()]);
-        }
-
-        if let Some(l) = adj_list.get_mut(&n2) {
-            l.push(n1.clone());
-        } else {
-            adj_list.insert(n2.clone(), vec![n1.clone()]);
-        }
+        add_cave(&mut adj_list, n1.clone(), n2.clone());
+        add_cave(&mut adj_list, n2, n1);
     }
 
     println!("{:?}", find_paths(&adj_list))
@@ -82,4 +73,12 @@ fn find_paths(graph: &HashMap<Cave, Vec<Cave>>) -> u64 {
     }
 
     n_paths
+}
+
+fn add_cave(graph: &mut HashMap<Cave, Vec<Cave>>, n1: Cave, n2: Cave) {
+    if let Some(l) = graph.get_mut(&n1) {
+        l.push(n2);
+    } else {
+        graph.insert(n1, vec![n2]);
+    }
 }
