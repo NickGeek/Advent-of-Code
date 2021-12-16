@@ -35,7 +35,6 @@ fn part1(raw: &str) {
 
     println!("{:?}", p);
     println!("{:?}", count_versions(&p));
-    // println!("{:?}", to_dec(&*p.lit_val));
 }
 
 fn parse_packet(binary_str: &str) -> Result<(Packet, usize), usize> {
@@ -54,15 +53,10 @@ fn parse_packet(binary_str: &str) -> Result<(Packet, usize), usize> {
         // literal
         while get_c(cur, binary_str) == '1' {
             cur += 1;
-            println!("pushing from {} to {} with len {}", cur, cur + 4, binary_str.len());
             p.lit_val.push_str(get_range(binary_str, cur, cur+4));
             cur += 4;
-            // if cur > binary_str.len() - 4 {
-            //     break;
-            // }
         }
         cur += 1;
-        println!("pushing from {} to {} with len {}", cur, cur + 4, binary_str.len());
         p.lit_val.push_str(get_range(binary_str, cur, cur+4));
         cur += 4;
     } else {
@@ -87,7 +81,6 @@ fn parse_packet(binary_str: &str) -> Result<(Packet, usize), usize> {
             }
         } else {
             let mut max = cur + sub_len;
-            println!("max: {}, len: {}, cur: {}", max, binary_str.len(), cur);
 
             while cur < max {
                 match parse_packet(get_range(binary_str, cur, max)) {
@@ -111,11 +104,6 @@ fn get_c(cur: usize, bin_str: &str) -> char {
 }
 
 fn get_range(bin_str: &str, from: usize, to: usize) -> &str {
-    // if to <= bin_str.len() {
-    //
-    // } else {
-    //     &bin_str[from..]
-    // }
     &bin_str[from..to]
 }
 
@@ -125,7 +113,31 @@ fn count_versions(p: &Packet) -> usize {
 }
 
 fn part2(raw: &str) {
+    let hex = raw;
+    let binary_str = hex.chars().map(|n| to_binary(n)).collect::<String>();
 
+    let (p, _) = parse_packet(&*binary_str).unwrap();
+    println!("Part 2: {}", exec(&p));
+}
+
+fn exec(p: &Packet) -> usize {
+    match p.type_id {
+        0 => p.sub_packets.iter().map(|p| exec(p)).sum(),
+        1 => p.sub_packets.iter().map(|p| exec(p)).product(),
+        2 => p.sub_packets.iter().map(|p| exec(p)).min().unwrap(),
+        3 => p.sub_packets.iter().map(|p| exec(p)).max().unwrap(),
+        4 => to_dec(&*p.lit_val),
+        5 => {
+            if exec(&p.sub_packets[0]) > exec(&p.sub_packets[1]) { 1 } else { 0 }
+        },
+        6 => {
+            if exec(&p.sub_packets[0]) < exec(&p.sub_packets[1]) { 1 } else { 0 }
+        },
+        7 => {
+            if exec(&p.sub_packets[0]) == exec(&p.sub_packets[1]) { 1 } else { 0 }
+        },
+        _ => unreachable!()
+    }
 }
 
 fn to_dec(bin: &str) -> usize {
