@@ -30,8 +30,15 @@ fn main() {
 }
 
 fn get_offset_and_rotate(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> V3 {
+    let f = rotations(&(-618,-824,-621)).iter().position(|a| a == &(-618+68,-824-1246,-621-43)).unwrap();
+    let foo: HashSet<V3> = relative.iter().map(|a| rotations(a)[f]).collect();
+    println!("{:?}", foo);
+
+    let a = get_offset(absolute, &foo);
+
     for i in 0..24 {
         let relative: HashSet<V3> = relative.iter().map(|a| rotations(a)[i]).collect();
+
         if let Some(offset) = get_offset(absolute, &relative) {
             return offset
         }
@@ -44,17 +51,19 @@ fn get_offset(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<V3> {
     for b in relative {
         for a in absolute {
             // let test = (a.0 - b.0, a.1 - b.1, a.2 - b.2);
-            let test = (68,-1246,-43);
+            let test = (68,-1246,43);
 
             let common = relative.into_iter()
                 .filter(|b| {
-                    if absolute.contains(&apply_offset(b, &test)) {
-                        println!("found {:?} using {:?}", &apply_offset(b, &test), test);
-                    }
+                    // if absolute.contains(&apply_offset(b, &test)) {
+                    //     println!("found {:?} using {:?}", &apply_offset(b, &test), test);
+                    // }
 
                     absolute.contains(&apply_offset(b, &test))
                 })
                 .count();
+
+            println!("{}", common);
 
             if common >= 12 {
                 return Some(test);
@@ -73,10 +82,10 @@ fn rotations(o: &V3) -> [V3; 24] {
     let (x, y, z) = *o;
     let perms = [
         (x, y, z),
+        (x, z, y),
         (y, x, z),
         (y, z, x),
         (z, y, x),
-        (y, z, x),
         (z, x, y)
     ];
 
