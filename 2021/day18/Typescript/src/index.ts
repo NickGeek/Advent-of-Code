@@ -151,21 +151,45 @@ function add(a: Node, b: Node): Node {
 	return new Node(a, b);
 }
 
+function mag(s: Tree): number {
+	if (s instanceof Leaf) {
+		return s.value;
+	} else {
+		return 3*mag(s.left) + 2*mag(s.right);
+	}
+}
+
 (async () => {
-	const raw = await readFile('inputT.txt').then(b => b.toString());
+	const raw = await readFile('input.txt').then(b => b.toString());
 	const snailfish = raw.split('\n').map(l => toTree(JSON.parse(l)));
 
 	let added = snailfish.slice(1).reduce((acc, s) => {
 		const added = add(acc as Node, s as Node);
-		// step(added);
+		while (step(added)) {}
 		return added;
 	}, snailfish[0]);
 
 	console.log(added.toString());
-	while (step(added)) {
-		console.log(added.toString());
-	}
-	console.log('--------------');
+	console.log(mag(added));
+
+	// part 2
+	const snailfish2 = raw.split('\n').map(l => toTree(JSON.parse(l)));
+	let lMag = 0;
+	snailfish2.forEach((a, i) => {
+		snailfish2.forEach((b, j) => {
+			a = raw.split('\n').map(l => toTree(JSON.parse(l)))[i];
+			b = raw.split('\n').map(l => toTree(JSON.parse(l)))[j];
+			if (a.toString() === b.toString()) return;
+			let sf = add(a as Node, b as Node);
+			while (step(sf)) {}
+
+			let m = mag(sf);
+			if (m > lMag) {
+				lMag = m;
+			}
+		})
+	});
+	console.log(lMag);
 })().catch(e => {
 	console.error(e);
 	process.exit(1);
