@@ -25,7 +25,7 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
-    let test = get_offset_and_rotate(&rs[1], &rs[4]).unwrap();
+    let test = get_offset_and_rotate(&rs[2], &rs[4]).unwrap();
 
     let mut offsets = HashMap::with_capacity(rs.len());
     for (i, a) in rs.iter().enumerate() {
@@ -73,7 +73,7 @@ fn main() {
 
     println!("d");
 
-    // let mut bs = HashSet::new();
+    let bs = zeroed_offsets.values().flat_map(|v| v.iter()).collect::<HashSet<_>>();
     // for (offset_idx, rs) in rotated.iter().enumerate() {
     //     let offset = offsets[offset_idx];
     //     for pos in rs {
@@ -81,8 +81,8 @@ fn main() {
     //     }
     // }
 
-    // println!("{:#?}", bs);
-    // println!("{:?}", bs.len());
+    println!("{:#?}", bs);
+    println!("{:?}", bs.len());
 }
 
 fn get_offset_and_rotate(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<(V3, usize)> {
@@ -106,6 +106,9 @@ fn get_offset(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<V3> {
                 .filter(|b| absolute.contains(&apply_offset(b, &test)))
                 .count();
 
+            if common > 1 {
+                println!("{:?}", common);
+            }
             if common >= 12 {
                 return Some(test);
             }
