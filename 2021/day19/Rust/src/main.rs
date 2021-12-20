@@ -5,7 +5,7 @@ use itertools::Itertools;
 type V3 = (i64, i64, i64);
 
 fn main() {
-    let raw = std::fs::read_to_string("./inputT.txt").unwrap();
+    let raw = std::fs::read_to_string("./input.txt").unwrap();
     let rs = raw.split("\n\n")
         .map(|readings| {
             let mut rs = readings.lines();
@@ -37,25 +37,27 @@ fn main() {
     assert_eq!(offsets.len(), rs.len());
 
     // Now make everything relative to 0
-    let mut zeroed_offsets = HashMap::with_capacity(rs.len());
+    let mut zeroed_beacons = HashMap::with_capacity(rs.len());
     for (sensor, data) in offsets.iter() {
-        let mut rs = rs.clone();
+        let sensor = *sensor;
         let mut visited = HashSet::new();
         let mut q = VecDeque::new();
-        for (relative_to, (offset, rotation_idx)) in data { q.push_back((relative_to, offset, rotation_idx)); }
+        for (relative_to, (offset, rotation_idx)) in data {
+            q.push_back((relative_to, offset, rotation_idx, rs[sensor].clone()));
+        }
         while !q.is_empty() {
-            let (relative_to, offset, rotation_idx) = q.pop_front().unwrap().clone();
+            let (relative_to, offset, rotation_idx, r) = q.pop_front().unwrap().clone();
             if *relative_to == 0 {
-                let res: HashSet<V3> = rs[*sensor].iter()
+                let res: HashSet<V3> = r.iter()
                     .map(|x| rotations(x)[*rotation_idx])
                     .map(|x| apply_offset(&x, offset))
                     .collect();
 
-                zeroed_offsets.insert(*sensor, res);
+                zeroed_beacons.insert(sensor, res);
                 break;
             }
 
-            rs[*sensor] = rs[*sensor].iter()
+            let relative_data: HashSet<V3> = r.iter()
                 .map(|x| rotations(x)[*rotation_idx])
                 .map(|x| apply_offset(&x, offset))
                 .collect();
@@ -63,24 +65,56 @@ fn main() {
             visited.insert(relative_to);
             for (relative_to, (offset, rotation_idx)) in offsets.get(relative_to).unwrap() {
                 if !visited.contains(relative_to) {
-                    q.push_back((relative_to, offset, rotation_idx));
+                    q.push_back((relative_to, offset, rotation_idx, relative_data.clone()));
                 }
             }
         }
     }
 
-    assert_eq!(zeroed_offsets.len(), rs.len());
+    assert_eq!(zeroed_beacons.len(), rs.len());
 
-    let bs = zeroed_offsets.values().flat_map(|v| v.iter()).collect::<HashSet<_>>();
-    // for (offset_idx, rs) in rotated.iter().enumerate() {
-    //     let offset = offsets[offset_idx];
-    //     for pos in rs {
-    //         bs.insert(apply_offset(pos, &offset));
-    //     }
-    // }
-
-    println!("{:#?}", bs);
+    let bs = zeroed_beacons.values().flat_map(|v| v.iter()).collect::<HashSet<_>>();
     println!("{:?}", bs.len());
+
+
+    // Part 2
+    let mut zeroed_offsets = HashMap::with_capacity(rs.len());
+    for (sensor, data) in offsets.iter() {
+        let mut visited = HashSet::new();
+        let mut q = VecDeque::new();
+        for (relative_to, (offset, rotation_idx)) in data {
+            q.push_back((relative_to, offset, rotation_idx, (0, 0, 0)));
+        }
+        while !q.is_empty() {
+            let (relative_to, offset, rotation_idx, zero) = q.pop_front().unwrap().clone();
+            if *relative_to == 0 {
+                let r_zero = apply_offset(&rotations(&zero)[*rotation_idx], offset);
+                zeroed_offsets.insert(*sensor, r_zero);
+                break;
+            }
+
+            let r_zero = apply_offset(&rotations(&zero)[*rotation_idx], offset);
+
+            visited.insert(relative_to);
+            for (relative_to, (offset, rotation_idx)) in offsets.get(relative_to).unwrap() {
+                if !visited.contains(relative_to) {
+                    q.push_back((relative_to, offset, rotation_idx, r_zero));
+                }
+            }
+        }
+    }
+
+
+    let mut largest = 0;
+    for (x1, y1, z1) in zeroed_offsets.values() {
+        for (x2, y2, z2) in zeroed_offsets.values() {
+            let manhattan = (x1 - x2).abs() + (y1 - y2).abs() + (z1 - z2).abs();
+            if manhattan > largest {
+                largest = manhattan;
+            }
+        }
+    }
+    println!("{}", largest);
 }
 
 fn get_offset_and_rotate(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<(V3, usize)> {
