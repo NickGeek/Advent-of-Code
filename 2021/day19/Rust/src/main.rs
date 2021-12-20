@@ -25,8 +25,6 @@ fn main() {
         })
         .collect::<Vec<_>>();
 
-    let test = get_offset_and_rotate(&rs[2], &rs[4]).unwrap();
-
     let mut offsets = HashMap::with_capacity(rs.len());
     for (i, a) in rs.iter().enumerate() {
         for (j, b) in rs.iter().enumerate() {
@@ -71,7 +69,7 @@ fn main() {
         }
     }
 
-    println!("d");
+    assert_eq!(zeroed_offsets.len(), rs.len());
 
     let bs = zeroed_offsets.values().flat_map(|v| v.iter()).collect::<HashSet<_>>();
     // for (offset_idx, rs) in rotated.iter().enumerate() {
@@ -86,7 +84,7 @@ fn main() {
 }
 
 fn get_offset_and_rotate(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<(V3, usize)> {
-    for i in 0..24 {
+    for i in 0..rotations(&(0,0,0)).len() {
         let relative: HashSet<V3> = relative.iter().map(|a| rotations(a)[i]).collect();
 
         if let Some(offset) = get_offset(absolute, &relative) {
@@ -106,9 +104,6 @@ fn get_offset(absolute: &HashSet<V3>, relative: &HashSet<V3>) -> Option<V3> {
                 .filter(|b| absolute.contains(&apply_offset(b, &test)))
                 .count();
 
-            if common > 1 {
-                println!("{:?}", common);
-            }
             if common >= 12 {
                 return Some(test);
             }
@@ -129,7 +124,7 @@ fn rotations(o: &V3) -> Vec<V3> {
         .collect::<Vec<Vec<_>>>();
     let perms = perms.into_iter().map(|p| (p[0], p[1], p[2])).collect::<Vec<_>>();
 
-    let mut res = Vec::<V3>::with_capacity(24);
+    let mut res = Vec::<V3>::new();
     res.extend_from_slice(perms.as_slice());
 
     for (a, b, c) in perms {
@@ -142,5 +137,5 @@ fn rotations(o: &V3) -> Vec<V3> {
         res.push((a * -1, b * -1, c * -1)); // 1 1 1
     }
 
-    res.try_into().unwrap()
+    res
 }
