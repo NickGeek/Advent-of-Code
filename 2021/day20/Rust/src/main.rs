@@ -38,10 +38,10 @@ fn main() {
 
 
     let mut proc = image;
-    print_grid(&proc, GRID_SIZE, GRID_SIZE);
-    for i in 0..2 {
+    // print_grid(&proc, GRID_SIZE, GRID_SIZE);
+    for i in 0..50 {
         proc = step(&proc, &algo, i);
-        print_grid(&proc, GRID_SIZE, GRID_SIZE);
+        // print_grid(&proc, GRID_SIZE, GRID_SIZE);
     }
 
     let lit = proc.values()
@@ -89,6 +89,7 @@ fn get_pixel(image: &HashMap<Pos, Pixel>, algo: &[Pixel], pos: Pos, n: usize) ->
     let mut number = String::with_capacity(9);
 
     let default = if n % 2 == 0 { Pixel::Dark } else { Pixel::Light };
+    // let default = Pixel::Dark; // if algo starts with .
 
     let (x, y) = pos;
     for y in y-1..=y+1 {
