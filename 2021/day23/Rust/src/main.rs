@@ -3,6 +3,7 @@ use std::fmt::format;
 use petgraph::Graph;
 use crate::Space::*;
 use itertools::Itertools;
+use petgraph::algo::dijkstra;
 use petgraph::prelude::NodeIndex;
 
 type Pos = (i64, i64);
@@ -47,47 +48,44 @@ fn main() {
         })
         .collect();
 
-    let adj_list = gen_adj_list(&nodes);
-
-    // println!("{:?}", adj_list);
-
 
     let mut graph = Graph::<(), i64>::new();
     let start = graph.add_node(());
     let mut visited = HashSet::new();
-    build_graph(&mut graph, &nodes, start, &mut visited);
+    let goal = build_graph(&mut graph, &nodes, start, &mut visited).unwrap();
 
-    // println!("{:?}", graph);
+    let res = dijkstra(&graph, start, Some(goal), |edge| {
+        *edge.weight()
+    });
+    println!("{:?}", res);
 
-    // let mut moves = generate_moves(&nodes, &adj_list);
-    // for (cost, next) in moves {
-    //     let next_node = graph.add_node(());
-    //     graph.add_edge(prev, next_node, cost as i64);
-    // }
+    let part1 = res.values().into_iter().filter(|cost| cost > &&0).min().unwrap();
+    println!("Part 1: {}", part1);
 }
 
-fn build_graph(graph: &mut Graph<(), i64>, prev: &HashMap<Pos, Space>, from: NodeIndex, visited: &mut HashSet<String>) {
+fn build_graph(graph: &mut Graph<(), i64>, prev: &HashMap<Pos, Space>, from: NodeIndex, visited: &mut HashSet<String>) -> Option<NodeIndex> {
     if is_complete(prev) {
-        println!("{}", hash_the_map(prev));
+        return Some(from);
     }
 
     if visited.contains(&*hash_the_map(prev)) {
-        return;
+        return None;
     }
-
-    // println!("idk\n{}\n", hash_the_map(prev));
 
     visited.insert(hash_the_map(prev));
 
-    let from = graph.add_node(());
-
     let moves = generate_moves(prev, &gen_adj_list(prev));
+    let mut res = None;
     for (cost, next) in moves {
         let next_node = graph.add_node(());
         graph.add_edge(from, next_node.clone(), cost as i64);
 
-        build_graph(graph, &next, next_node, visited);
+        if let Some(goal) = build_graph(graph, &next, next_node, visited) {
+            res = Some(goal);
+        }
     }
+
+    res
 }
 
 fn gen_adj_list(nodes: &HashMap<Pos, Space>) -> HashMap<Pos, Vec<Pos>> {
@@ -132,9 +130,6 @@ fn generate_moves(nodes: &HashMap<Pos, Space>, adj_list: &HashMap<Pos, Vec<Pos>>
 fn calc_movement(nodes: &HashMap<Pos, Space>, adj_list: &HashMap<Pos, Vec<Pos>>, (pos, space): (Pos, Space), visited: &mut HashSet<String>) -> Vec<(u64, HashMap<Pos, Space>)> {
     let neighbours = adj_list.get(&pos).unwrap();
     let mut moves = vec![];
-
-    let is_in_hallway = pos.1 == 1;
-    let is_in_room = pos.1 >= 2;
 
     for neigh_pos in neighbours {
         let neigh = nodes.get(neigh_pos).unwrap();
@@ -183,14 +178,13 @@ fn calc_movement(nodes: &HashMap<Pos, Space>, adj_list: &HashMap<Pos, Vec<Pos>>,
                     }
                 }
             },
-            Empty => {
-                if neigh_pos.1 < pos.1 && is_my_empty_room(&space, *neigh_pos, nodes) {
-                    let mut movement = nodes.clone();
-                    movement.insert(pos, Empty);
-                    movement.insert(*neigh_pos, space);
-                    let cost = get_cost(&space);
-                    moves.push((cost, movement));
-                }
+            Empty if neigh_pos.1 > pos.1 && is_my_empty_room(&space, *neigh_pos, nodes) => {
+                println!("{}", hash_the_map(&nodes));
+                let mut movement = nodes.clone();
+                movement.insert(pos, Empty);
+                movement.insert(*neigh_pos, space);
+                let cost = get_cost(&space);
+                moves.push((cost, movement));
             }
             _ => continue
         }
@@ -204,7 +198,6 @@ fn hash_the_map(map: &HashMap<Pos, Space>) -> String {
 
     for y in 0..4 {
         for x in 0..13 {
-            let default = Ignore;
             let node = map.get(&(x, y)).unwrap_or(&Ignore);
             res.push(match node {
                 A => 'A',
@@ -234,31 +227,32 @@ fn get_cost(space: &Space) -> u64 {
 
 fn is_my_empty_room(amphi: &Space, (x, y): Pos, nodes: &HashMap<Pos, Space>) -> bool {
     let node = nodes.get(&(x, y)).unwrap();
-    if let Empty = node {
-        match amphi {
-            A => {
-                x == 3 && (y == 2 || y == 3)
+    match node {
+        Empty | A | B | C | D => {
+            match amphi {
+                A => {
+                    x == 3 && (y == 2 || y == 3)
+                }
+                B => {
+                    x == 5 && (y == 2 || y == 3)
+                }
+                C => {
+                    x == 7 && (y == 2 || y == 3)
+                }
+                D => {
+                    x == 9 && (y == 2 || y == 3)
+                }
+                _ => false
             }
-            B => {
-                x == 5 && (y == 2 || y == 3)
-            }
-            C => {
-                x == 7 && (y == 2 || y == 3)
-            }
-            D => {
-                x == 9 && (y == 2 || y == 3)
-            }
-            _ => false
         }
-    } else {
-        false
+        _ => false
     }
 }
 
 fn is_complete(nodes: &HashMap<Pos, Space>) -> bool {
     let a = nodes.get(&(3,2)).unwrap() == &A && nodes.get(&(3,3)).unwrap() == &A;
-    let b = nodes.get(&(5,2)).unwrap() == &A && nodes.get(&(5,3)).unwrap() == &B;
-    let c = nodes.get(&(7,2)).unwrap() == &A && nodes.get(&(7,3)).unwrap() == &C;
-    let d = nodes.get(&(9,2)).unwrap() == &A && nodes.get(&(9,3)).unwrap() == &D;
+    let b = nodes.get(&(5,2)).unwrap() == &B && nodes.get(&(5,3)).unwrap() == &B;
+    let c = nodes.get(&(7,2)).unwrap() == &C && nodes.get(&(7,3)).unwrap() == &C;
+    let d = nodes.get(&(9,2)).unwrap() == &D && nodes.get(&(9,3)).unwrap() == &D;
     a && b && c && d
 }
